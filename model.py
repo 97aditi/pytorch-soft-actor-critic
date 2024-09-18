@@ -60,6 +60,10 @@ class QNetwork(nn.Module):
 
         return x1, x2
 
+    def save_model(self, filename):
+        # save entire model
+        torch.save(self, filename)
+
 
 class GaussianPolicy(nn.Module):
     def __init__(self, num_inputs, num_actions, hidden_dim, action_space=None):
@@ -110,6 +114,9 @@ class GaussianPolicy(nn.Module):
         self.action_bias = self.action_bias.to(device)
         return super(GaussianPolicy, self).to(device)
 
+    def save_model(self, filename):
+        # save entire model
+        torch.save(self, filename)
 
 class DeterministicPolicy(nn.Module):
     def __init__(self, num_inputs, num_actions, hidden_dim, action_space=None):
