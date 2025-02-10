@@ -48,7 +48,7 @@ class QNetwork(nn.Module):
         self.apply(weights_init_)
 
     def forward(self, state, action):
-        xu = torch.cat([state, action], 1)
+        xu = torch.cat([state, action], -1)
         
         x1 = F.relu(self.linear1(xu))
         x1 = F.relu(self.linear2(x1))
@@ -104,6 +104,21 @@ class GaussianPolicy(nn.Module):
         log_prob = log_prob.sum(1, keepdim=True)
         mean = torch.tanh(mean) * self.action_scale + self.action_bias
         return action, log_prob, mean
+
+
+    def compute_log_probs(self, states, actions):
+        mean, log_std = self.forward(states)
+        std = log_std.exp()
+        normal = Normal(mean, std)
+        # we need to convert he action to x_t space
+        action_normalized = (actions - self.action_bias) / self.action_scale
+        x_t = torch.atanh(action_normalized)
+        log_prob = normal.log_prob(x_t)
+        # Enforcing Action Bound
+        log_prob -= torch.log(self.action_scale * (1 - action_normalized.pow(2)) + epsilon)
+        # sum over action dimensions
+        log_prob = log_prob.sum(1, keepdim=True)
+        return log_prob
 
     def to(self, device):
         self.action_scale = self.action_scale.to(device)
